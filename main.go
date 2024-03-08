@@ -39,6 +39,17 @@ func (m model) sendNotification(Name string, Text string) {
 	}
 }
 
+func (m model) getPomodoroData() {
+	obj := m.Dbus.Object("org.gnome.Pomodoro", "/org/gnome/Pomodoro")
+
+	var props map[string]dbus.Variant
+	err := obj.Call("org.freedesktop.DBus.Properties.GetAll", 0, "org.gnome.Pomodoro").Store(&props)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(props)
+}
+
 func (m model) Init() tea.Cmd {
 	return nil
 }
@@ -51,6 +62,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		    return m, tea.Quit
 	    case "n":
 		    m.sendNotification("Test", "Hello world")
+	    case "p":
+		    m.getPomodoroData()
 	    }
     }
     return m, nil
