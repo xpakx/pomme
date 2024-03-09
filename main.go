@@ -3,12 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math"
 	"os"
 
+	progress "github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
-	dbus "github.com/godbus/dbus/v5"
 	lipgloss "github.com/charmbracelet/lipgloss"
-        progress "github.com/charmbracelet/bubbles/progress"
+	dbus "github.com/godbus/dbus/v5"
 )
 
 var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
@@ -161,7 +162,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		    m.sendNotification("Test", "Hello world")
 	    case "P":
 		    pom := m.getPomodoroData()
-		    cmd := m.progress.SetPercent(pom.Elapsed/float64(pom.StateDuration))
+		    percent := pom.Elapsed/float64(pom.StateDuration)
+		    if math.IsNaN(percent) {
+			    percent = 0
+		    }
+		    cmd := m.progress.SetPercent(percent)
 		    m.pomodoro = pom
 		    return m, cmd
 	    case "p":
