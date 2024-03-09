@@ -12,6 +12,7 @@ import (
 )
 
 var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
+var commandStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#6c7086")).Render
 var pomodoroStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#f38ba8")).Render
 var breakStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#89b4fa")).Render
 
@@ -158,17 +159,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		    return m, tea.Quit
 	    case "n":
 		    m.sendNotification("Test", "Hello world")
-	    case "p":
+	    case "P":
 		    pom := m.getPomodoroData()
 		    cmd := m.progress.SetPercent(pom.Elapsed/float64(pom.StateDuration))
 		    m.pomodoro = pom
 		    return m, cmd
-	    case "P":
+	    case "p":
 		    m.pausePomodoro()
-	    case "r":
-		    m.resumePomodoro()
 	    case "s":
-		    m.startPomodoro()
+		    if m.pomodoro.IsPaused {
+			    m.resumePomodoro()
+		    } else {
+			    m.startPomodoro()
+		    }
 	    case "S":
 		    m.stopPomodoro()
 	    }
@@ -193,10 +196,16 @@ func (m model) View() string {
 		s += breakStyle("[break]")
 	}
 
-	s += "\n\n"
+	s += "\n\n\n"
 
 
-	s += helpStyle("\nPress q to quit.\n")
+	s += commandStyle("q") + helpStyle(" quit • ")
+	s += commandStyle("s") + helpStyle(" ⏵ • ")
+	s += commandStyle("p") + helpStyle(" ⏸ • ")
+	s += commandStyle("S") + helpStyle(" ⏹ • ")
+	s += commandStyle("P") + helpStyle(" load data")
+
+	s += "\n"
 
 	return s
 }
