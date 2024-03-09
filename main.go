@@ -32,7 +32,11 @@ type model struct {
 }
 
 func initialModel(Dbus *dbus.Conn) model {
-	return model {msg: "Hello", Dbus: Dbus}
+	return model {
+		msg: "Hello", 
+		Dbus: Dbus,
+		progress: progress.New(progress.WithDefaultGradient()),
+	}
 }
 
 func (m model) sendNotification(Name string, Text string) {
@@ -43,7 +47,7 @@ func (m model) sendNotification(Name string, Text string) {
 	}
 }
 
-func (m model) getPomodoroData() {
+func (m model) getPomodoroData() Pomodoro {
 	obj := m.Dbus.Object("org.gnome.Pomodoro", "/org/gnome/Pomodoro")
 
 	var props map[string]dbus.Variant
@@ -55,7 +59,7 @@ func (m model) getPomodoroData() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(pomodoro)
+	return pomodoro
 }
 
 type Pomodoro struct {
@@ -118,8 +122,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	    case "n":
 		    m.sendNotification("Test", "Hello world")
 	    case "p":
-		    m.getPomodoroData()
+		    pom := m.getPomodoroData()
+		    cmd := m.progress.SetPercent(pom.Elapsed/float64(pom.StateDuration))
+		    return m, cmd
 	    }
+    case progress.FrameMsg:
+	    pm, cmd := m.progress.Update(msg)
+	    m.progress = pm.(progress.Model)
+	    return m, cmd
     }
     return m, nil
 }
@@ -130,8 +140,10 @@ func (m model) View() string {
 	var Blue   = "\033[34m"
 	var Red    = "\033[31m"
 
-	s := Blue + m.msg + Reset
+	s := Blue + m.msg + Reset + "\n\n" 
+	s += m.progress.View() 
 	s += "\n\n"
+
 
 	s += Red + "\nPress q to quit.\n" + Reset
 
