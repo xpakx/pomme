@@ -7,9 +7,13 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	dbus "github.com/godbus/dbus/v5"
-	// lipgloss "github.com/charmbracelet/lipgloss"
+	lipgloss "github.com/charmbracelet/lipgloss"
         progress "github.com/charmbracelet/bubbles/progress"
 )
+
+var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
+var pomodoroStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#f38ba8")).Render
+var breakStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#89b4fa")).Render
 
 func main() {
 	conn, err := dbus.ConnectSessionBus()
@@ -36,7 +40,7 @@ func initialModel(Dbus *dbus.Conn) model {
 	return model {
 		msg: "Hello", 
 		Dbus: Dbus,
-		progress: progress.New(progress.WithDefaultGradient()),
+		progress: progress.New(progress.WithGradient("#f2cdcd", "#f5c2e7")),
 	}
 }
 
@@ -137,27 +141,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-
-	var Reset  = "\033[0m"
-	var Blue   = "\033[34m"
-	var Red    = "\033[31m"
-
-	s := Blue + m.msg + Reset + "\n\n" 
+	s := breakStyle(m.msg) + "\n\n" 
 	s += m.progress.View() 
 	s += "\n"
 	if m.pomodoro.IsPaused {
 		s += "⏸ "
 	}
 	if m.pomodoro.State == "pomodoro" {
-		s += Red + "[pomodoro]" + Reset
+		s += pomodoroStyle("[pomodoro]")
 	} else if m.pomodoro.State == "long_break" || m.pomodoro.State == "short_break" {
-		s += Blue + "[break]" + Reset
+		s += breakStyle("[break]")
 	}
 
 	s += "\n\n"
 
 
-	s += Red + "\nPress q to quit.\n" + Reset
+	s += helpStyle("\nPress q to quit.\n")
 
 	return s
 }
