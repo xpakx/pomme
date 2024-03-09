@@ -114,6 +114,38 @@ func TransformPomodoro(props map[string]dbus.Variant) (Pomodoro, error) {
 	return Pomodoro{IsPaused, Elapsed, State, int(StateDuration)}, nil
 }
 
+func (m model) pausePomodoro() {
+	obj := m.Dbus.Object("org.gnome.Pomodoro", "/org/gnome/Pomodoro")
+	call := obj.Call("org.gnome.Pomodoro.Pause", 0)
+	if call.Err != nil {
+		panic(call.Err)
+	}
+}
+
+func (m model) resumePomodoro() {
+	obj := m.Dbus.Object("org.gnome.Pomodoro", "/org/gnome/Pomodoro")
+	call := obj.Call("org.gnome.Pomodoro.Resume", 0)
+	if call.Err != nil {
+		panic(call.Err)
+	}
+}
+
+func (m model) stopPomodoro() {
+	obj := m.Dbus.Object("org.gnome.Pomodoro", "/org/gnome/Pomodoro")
+	call := obj.Call("org.gnome.Pomodoro.Stop", 0)
+	if call.Err != nil {
+		panic(call.Err)
+	}
+}
+
+func (m model) startPomodoro() {
+	obj := m.Dbus.Object("org.gnome.Pomodoro", "/org/gnome/Pomodoro")
+	call := obj.Call("org.gnome.Pomodoro.Start", 0)
+	if call.Err != nil {
+		panic(call.Err)
+	}
+}
+
 func (m model) Init() tea.Cmd {
 	return nil
 }
@@ -131,6 +163,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		    cmd := m.progress.SetPercent(pom.Elapsed/float64(pom.StateDuration))
 		    m.pomodoro = pom
 		    return m, cmd
+	    case "P":
+		    m.pausePomodoro()
+	    case "r":
+		    m.resumePomodoro()
+	    case "s":
+		    m.startPomodoro()
+	    case "S":
+		    m.stopPomodoro()
 	    }
     case progress.FrameMsg:
 	    pm, cmd := m.progress.Update(msg)
