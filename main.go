@@ -29,6 +29,7 @@ type model struct {
 	msg string
 	Dbus *dbus.Conn
 	progress progress.Model
+	pomodoro Pomodoro
 }
 
 func initialModel(Dbus *dbus.Conn) model {
@@ -124,6 +125,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	    case "p":
 		    pom := m.getPomodoroData()
 		    cmd := m.progress.SetPercent(pom.Elapsed/float64(pom.StateDuration))
+		    m.pomodoro = pom
 		    return m, cmd
 	    }
     case progress.FrameMsg:
@@ -142,6 +144,16 @@ func (m model) View() string {
 
 	s := Blue + m.msg + Reset + "\n\n" 
 	s += m.progress.View() 
+	s += "\n"
+	if m.pomodoro.IsPaused {
+		s += "⏸ "
+	}
+	if m.pomodoro.State == "pomodoro" {
+		s += Red + "[pomodoro]" + Reset
+	} else if m.pomodoro.State == "long_break" || m.pomodoro.State == "short_break" {
+		s += Blue + "[break]" + Reset
+	}
+
 	s += "\n\n"
 
 
