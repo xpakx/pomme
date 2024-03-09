@@ -7,6 +7,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	dbus "github.com/godbus/dbus/v5"
+	// lipgloss "github.com/charmbracelet/lipgloss"
+        progress "github.com/charmbracelet/bubbles/progress"
 )
 
 func main() {
@@ -26,6 +28,7 @@ func main() {
 type model struct {
 	msg string
 	Dbus *dbus.Conn
+	progress progress.Model
 }
 
 func initialModel(Dbus *dbus.Conn) model {
