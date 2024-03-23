@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"flag"
 
 	progress "github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
@@ -18,16 +19,30 @@ var pomodoroStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#f38ba8")).Re
 var breakStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#89b4fa")).Render
 
 func main() {
+	startFlag := flag.Bool("s", false, "start a pomodoro")
+	stopFlag := flag.Bool("S", false, "stop a pomodoro")
+
+	flag.Parse()
+
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
-	p := tea.NewProgram(initialModel(conn))
+	fmt.Println(*startFlag)
 
-	if _, err := p.Run(); err != nil {
-		fmt.Printf("error: %v", err)
-		os.Exit(1)
+	if *startFlag {
+		m := initialModel(conn)
+		m.startPomodoro()
+	} else if *stopFlag {
+		m := initialModel(conn)
+		m.stopPomodoro()
+	} else {
+		p := tea.NewProgram(initialModel(conn))
+		if _, err := p.Run(); err != nil {
+			fmt.Printf("error: %v", err)
+			os.Exit(1)
+		}
 	}
 }
 
