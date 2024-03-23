@@ -21,7 +21,7 @@ var breakStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#89b4fa")).Rende
 func main() {
 	startFlag := flag.Bool("s", false, "start a pomodoro")
 	stopFlag := flag.Bool("S", false, "stop a pomodoro")
-
+	silentFlag := flag.Bool("m", false, "silent mode")
 	flag.Parse()
 
 	conn, err := dbus.ConnectSessionBus()
@@ -29,16 +29,17 @@ func main() {
 		panic(err)
 	}
 	defer conn.Close()
-	fmt.Println(*startFlag)
+
+	m := initialModel(conn)
 
 	if *startFlag {
-		m := initialModel(conn)
 		m.startPomodoro()
 	} else if *stopFlag {
-		m := initialModel(conn)
 		m.stopPomodoro()
-	} else {
-		p := tea.NewProgram(initialModel(conn))
+	}
+
+	if !*silentFlag {
+		p := tea.NewProgram(m)
 		if _, err := p.Run(); err != nil {
 			fmt.Printf("error: %v", err)
 			os.Exit(1)
