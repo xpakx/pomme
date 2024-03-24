@@ -164,6 +164,32 @@ func (m model) startPomodoro() {
 	}
 }
 
+
+func subscribe() {
+	conn, err := dbus.ConnectSessionBus()
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+	rules := []string{
+		"type='signal',path='/org/gnome/Pomodoro',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'",
+	}
+	var flag uint = 0
+	call := conn.BusObject().Call("org.freedesktop.DBus.Monitoring.BecomeMonitor", 0, rules, flag)
+	if call.Err != nil {
+		fmt.Fprintln(os.Stderr, "Failed to become monitor:", call.Err)
+		return
+	}
+
+	c := make(chan *dbus.Message, 10)
+	conn.Eavesdrop(c)
+	fmt.Println("Monitoring…")
+	for v := range c {
+		fmt.Println(v)
+	}
+}
+
+
 func (m model) Init() tea.Cmd {
 	return nil
 }
@@ -195,6 +221,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		    }
 	    case "S":
 		    m.stopPomodoro()
+	    case "v":
+		    go subscribe()
 	    }
     case progress.FrameMsg:
 	    pm, cmd := m.progress.Update(msg)
