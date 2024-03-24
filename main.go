@@ -39,7 +39,8 @@ func main() {
 	}
 
 	if !*silentFlag {
-		p := tea.NewProgram(m)
+		p := tea.NewProgram(&m)
+		m.SetProgram(p)
 		if _, err := p.Run(); err != nil {
 			fmt.Printf("error: %v", err)
 			os.Exit(1)
@@ -52,6 +53,11 @@ type model struct {
 	Dbus *dbus.Conn
 	progress progress.Model
 	pomodoro Pomodoro
+	program *tea.Program
+}
+
+func (m *model) SetProgram(program *tea.Program) {
+	m.program = program
 }
 
 func initialModel(Dbus *dbus.Conn) model {
@@ -165,7 +171,7 @@ func (m model) startPomodoro() {
 }
 
 
-func subscribe() {
+func (m model) subscribe() {
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
 		panic(err)
@@ -183,21 +189,39 @@ func subscribe() {
 
 	c := make(chan *dbus.Message, 10)
 	conn.Eavesdrop(c)
-	fmt.Println("Monitoring…")
 	for v := range c {
-		processPropertyChange(v)
+		processPropertyChange(v, m.program)
 	}
 }
 
-func processPropertyChange(v *dbus.Message) {
+type ElapsedMsg struct {
+	Elapsed float64
+}
+
+type IsPausedMsg struct {
+	IsPaused bool
+}
+
+type StateMsg struct {
+	State string
+}
+
+type StateDurationMsg struct {
+	StateDuration float64
+}
+
+func processPropertyChange(v *dbus.Message, program *tea.Program) {
 	props := make(map[string]dbus.Variant)
+	if len(v.Body) < 2 {
+		return
+	}
 	props = v.Body[1].(map[string]dbus.Variant)
 
 	ElapsedVal, ok := props["Elapsed"]
 	if ok {
 		Elapsed, ok := ElapsedVal.Value().(float64)
 		if ok {
-			fmt.Println("Elapsed: ", Elapsed)
+			program.Send(ElapsedMsg{Elapsed})
 		}
 	}
 
@@ -205,7 +229,7 @@ func processPropertyChange(v *dbus.Message) {
 	if ok {
 		IsPaused, ok := IsPausedVal.Value().(bool)
 		if ok {
-			fmt.Println("IsPaused: ", IsPaused)
+			program.Send(IsPausedMsg{IsPaused})
 		}
 	}
 
@@ -213,7 +237,7 @@ func processPropertyChange(v *dbus.Message) {
 	if ok {
 		State, ok := StateVal.Value().(string)
 		if ok {
-			fmt.Println("State: ", State)
+			program.Send(StateMsg{State})
 		}
 	}
 
@@ -221,7 +245,7 @@ func processPropertyChange(v *dbus.Message) {
 	if ok {
 		StateDuration, ok := StateDurationVal.Value().(float64)
 		if ok {
-			fmt.Println("StateDuration: ", StateDuration)
+			program.Send(StateDurationMsg{StateDuration})
 		}
 	}
 }
@@ -258,12 +282,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		    }
 	    case "S":
 		    m.stopPomodoro()
-	    case "v":
-		    go subscribe()
+	    case "m":
+		    go m.subscribe()
 	    }
     case progress.FrameMsg:
 	    pm, cmd := m.progress.Update(msg)
 	    m.progress = pm.(progress.Model)
+	    return m, cmd
+    case ElapsedMsg:
+	    m.pomodoro.Elapsed = msg.Elapsed
+	    percent := msg.Elapsed/float64(m.pomodoro.StateDuration)
+	    if math.IsNaN(percent) {
+		    percent = 0
+	    }
+	    cmd := m.progress.SetPercent(percent)
 	    return m, cmd
     }
     return m, nil
