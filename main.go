@@ -185,7 +185,44 @@ func subscribe() {
 	conn.Eavesdrop(c)
 	fmt.Println("Monitoring…")
 	for v := range c {
-		fmt.Println(v)
+		processPropertyChange(v)
+	}
+}
+
+func processPropertyChange(v *dbus.Message) {
+	props := make(map[string]dbus.Variant)
+	props = v.Body[1].(map[string]dbus.Variant)
+
+	ElapsedVal, ok := props["Elapsed"]
+	if ok {
+		Elapsed, ok := ElapsedVal.Value().(float64)
+		if ok {
+			fmt.Println("Elapsed: ", Elapsed)
+		}
+	}
+
+	IsPausedVal, ok := props["IsPaused"]
+	if ok {
+		IsPaused, ok := IsPausedVal.Value().(bool)
+		if ok {
+			fmt.Println("IsPaused: ", IsPaused)
+		}
+	}
+
+	StateVal, ok := props["State"]
+	if ok {
+		State, ok := StateVal.Value().(string)
+		if ok {
+			fmt.Println("State: ", State)
+		}
+	}
+
+	StateDurationVal, ok := props["StateDuration"]
+	if ok {
+		StateDuration, ok := StateDurationVal.Value().(float64)
+		if ok {
+			fmt.Println("StateDuration: ", StateDuration)
+		}
 	}
 }
 
