@@ -297,6 +297,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	    }
 	    cmd := m.progress.SetPercent(percent)
 	    return m, cmd
+    case StateMsg:
+	    m.pomodoro.State = msg.State
+	    cmd := m.progress.SetPercent(0)
+	    return m, cmd
+    case IsPausedMsg:
+	    m.pomodoro.IsPaused = msg.IsPaused
+	    return m, nil
+    case StateDurationMsg:
+	    m.pomodoro.StateDuration = int(msg.StateDuration)
+	    percent := m.pomodoro.Elapsed/float64(msg.StateDuration)
+	    if math.IsNaN(percent) {
+		    percent = 0
+	    }
+	    cmd := m.progress.SetPercent(percent)
+	    return m, cmd
+	
     }
     return m, nil
 }
